@@ -19,6 +19,10 @@ int main(int argc, char *argv[]) {
             		case 'i': filepath = optarg; break;
             		case 'o': opts.offset = strtoull(optarg, NULL, 10); break;
             		case 'l': opts.size = strtoull(optarg, NULL, 10); break;
+			case 'g': opts.chunk_size = strtoull(optarg, NULL, 10); break;
+            		case 'n': opts.chunks_per_line = strtoull(optarg, NULL, 10); break;
+            		case 'f': opts.format_str = optarg; break; 
+            		case 'd': dirpath = optarg; break; // Флаг директории
         	}
     	}
 
