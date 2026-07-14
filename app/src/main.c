@@ -16,7 +16,9 @@ int main(int argc, char *argv[]) {
 
     	while ((opt = getopt(argc, argv, "i:o:l:g:n:d:f:")) != -1) {
         	switch (opt) {
-            		// Здесь будет обработка
+            		case 'i': filepath = optarg; break;
+            		case 'o': opts.offset = strtoull(optarg, NULL, 10); break;
+            		case 'l': opts.size = strtoull(optarg, NULL, 10); break;
         	}
     	}
 
