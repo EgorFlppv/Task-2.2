@@ -20,6 +20,22 @@ static void print_custom_format(size_t line_idx, size_t current_offset, unsigned
     	}
 }
 
+const char *p = opts->format_str;
+    	while (*p) {
+        	if (*p == '\\') {
+            		p++;
+            		switch(*p) {
+                	case 'n': putchar('\n'); break;
+                	case 't': putchar('\t'); break;
+                	default: putchar('\\'); putchar(*p); break;
+            		}
+        	}
+		else {
+            		putchar(*p); // Временная заглушка
+        	}	
+        	if (*p) p++;
+    	}
+
 int dump_file(const char *filepath, const DumpOptions *opts) {
 	FILE *f = fopen(filepath, "rb");
     	if (!f) return -1;
