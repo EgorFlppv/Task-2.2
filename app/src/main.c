@@ -25,7 +25,17 @@ int main(int argc, char *argv[]) {
             		case 'd': dirpath = optarg; break; // Флаг директории
         	}
     	}
+	
+	if (!filepath && !dirpath) {
+        	fprintf(stderr, "Не указан файл (-i) или директория (-d)\n");
+        	return 1;
+    	}
 
-	return 0;
+    	if (filepath) {
+        	return dump_file(filepath, &opts) == 0 ? 0 : 1;
+    	}
+    
+    	return 0;
+	
 }
 
