@@ -8,6 +8,18 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+static void print_custom_format(size_t line_idx, size_t current_offset, unsigned char *data, size_t data_len, const DumpOptions *opts) {
+	if (!opts->format_str) {
+        	// Стандартный вывод
+        	printf("%08zX  ", current_offset);
+        	for(size_t i = 0; i < data_len; i += opts->chunk_size) {
+            		printf("%02X ", data[i]);
+        	}
+        	printf("\n");
+        	return;
+    	}
+}
+
 int dump_file(const char *filepath, const DumpOptions *opts) {
 	FILE *f = fopen(filepath, "rb");
     	if (!f) return -1;
@@ -32,7 +44,7 @@ int dump_file(const char *filepath, const DumpOptions *opts) {
         	size_t bytes = fread(buffer, 1, to_read, f);
         	if (bytes == 0) break;
 
-        	// Здесь будет вывод
+        	print_custom_format(line_idx, current_offset, buffer, bytes, opts);
         
         	current_offset += bytes;
         	total_read += bytes;
