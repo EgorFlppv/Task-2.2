@@ -7,6 +7,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <dirent.h>
+#include <string.h>
+
+int dump_dir(const char* dirpath, const DumpOptions* opts) {
+    	struct dirent @id865564845(*entry);
+    	DIR* dp = opendir(dirpath);
+    	if (!dp) return -1;
+    	while ((entry = readdir(dp)) != NULL) {
+        	if (entry->d_type == DT_REG) { // Если это обычный файл
+            		char full_path[1024];
+            		snprintf(full_path, sizeof(full_path), "%s/%s", dirpath, entry->d_name);
+            		printf("File: %s\n", entry->d_name);
+            		dump_file(full_path, opts);
+        	}
+    	}
+    	closedir(dp);
+    	return 0;
+}
 
 static void print_custom_format(size_t line_idx, size_t current_offset, unsigned char *data, size_t data_len, const DumpOptions *opts) {
 	if (!opts->format_str) {

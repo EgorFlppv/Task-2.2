@@ -18,5 +18,6 @@
 } DumpOptions;
 
 int dump_file(const char *filepath, const DumpOptions *opts);
+int dump_dir(const char *dirpath, const DumpOptions *opts);.
 
 #endif

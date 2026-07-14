@@ -35,7 +35,9 @@ int main(int argc, char *argv[]) {
         	return dump_file(filepath, &opts) == 0 ? 0 : 1;
     	}
     
-    	return 0;
+    	if (dirpath) {
+        	return dump_dir(dirpath, &opts) == 0 ? 0 : 1;
+    	}
 	
 }
 
