@@ -30,10 +30,28 @@ const char *p = opts->format_str;
                 	default: putchar('\\'); putchar(*p); break;
             		}
         	}
+		else if (*p == '%') {
+            		p++;
+            		if (*p == 'i') printf("%zu", line_idx);
+            		else if (*p == 'n') printf("%zu", current_offset);
+            		else {
+                		int chunk_idx = 0;
+                		while (isdigit(*p)) {
+					chunk_idx = chunk_idx * 10 + (*p - '0');
+					p++;
+				}
+                		if ((*p == 'x' || *p == 'X') && (size_t)chunk_idx < data_len) {
+                    			printf("%02X", data[chunk_idx]);
+                		}
+				else if (*p == 'c' && (size_t)chunk_idx < data_len) {
+                    			char c = data[chunk_idx];
+                    			putchar((c >= 32 && c <= 126) ? c : '.');
+                		}
+            		}
+        	} 
 		else {
-            		putchar(*p); // Временная заглушка
-        	}	
-        	if (*p) p++;
+            		putchar(*p);
+        		}
     	}
 
 int dump_file(const char *filepath, const DumpOptions *opts) {
