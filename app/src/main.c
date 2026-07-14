@@ -1,19 +1,14 @@
 /*
-main.c - главный модуль программы. 
-
-Маткин Илья Александрович	06.07.2026
-*/
-
-#include <lib_main.h>
- 
+ * Описание файла: Парсинг аргументов для hex-дампа.
+ * ФИО: Филиппов Егор Ильич
+ * Группа: МК-102
+ */
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include "hexdump_lib.h"
 
-
-int main (int argc, char *argv[], char *envp[]) {
-
-int a = 2;
-int b = 3;
-
-	printf ("%d + %d = %d\n", a, b, LibAddFunction(a, b));
+int main(int argc, char *argv[]) {
 	return 0;
 }
+
