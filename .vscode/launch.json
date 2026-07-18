@@ -1,0 +1,18 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run prog",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/prog.exe", // Для MSYS2/MinGW обычно .exe
+            "args": ["-i", "test_file.bin", "-f", "%i %n %0x | %0c\\n"], // Пример аргументов, меняй под себя
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "gdb.exe" // Путь к gdb в MSYS2
+        }
+    ]
+}

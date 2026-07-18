@@ -1,0 +1,20 @@
+{
+  "OutputFoldersPerTargetSystem": {
+    "Local Machine": [
+      "out\\build\\x64-Debug",
+      "out\\install\\x64-Debug"
+    ]
+  },
+  "ExpandedNodes": [
+    "",
+    "\\app",
+    "\\app\\src",
+    "\\app\\tests",
+    "\\app\\tests\\test_integration",
+    "\\lib",
+    "\\lib\\include",
+    "\\lib\\src"
+  ],
+  "SelectedNode": "\\app\\tests\\test_integration\\test_app.c",
+  "PreviewInSolutionExplorer": false
+}

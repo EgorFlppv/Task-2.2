@@ -1,29 +1,24 @@
 /*
-test_app.c - модуль проверки программы. 
-
-Маткин Илья Александрович
+test_app.c - модуль проверки программы.
+ФИО: Филиппов Егор Ильич
+Группа: МК-102
 */
-
 #include "unity.h"
-
-#include "lib_main.h"
+#include "hexdump_lib.h"
 
 void setUp(void) {
-    // Вызывается перед каждым тестом (можно оставить пустым)
 }
 
 void tearDown(void) {
-    // Вызывается после каждого теста (можно оставить пустым)
 }
 
-void TestLibAddFunction(void) {
-    // Пример проверки: ожидали 3, получили результат функции
-    TEST_ASSERT_EQUAL_INT(4, LibAddFunction(2, 2));
+void TestHexdumpNullFile(void) {
+    DumpOptions opts = { .offset = 0, .size = 0, .chunk_size = 1, .chunks_per_line = 16 };
+    TEST_ASSERT_EQUAL_INT(-1, dump_file(NULL, &opts));
 }
 
 int main(void) {
     UNITY_BEGIN();
-    RUN_TEST(TestLibAddFunction);
+    RUN_TEST(TestHexdumpNullFile);
     return UNITY_END();
 }
-

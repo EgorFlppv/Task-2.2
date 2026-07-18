@@ -1,111 +1,185 @@
 /*
- * Описание файла: Реализация hex-дампа.
- * ФИО: Филиппов Егор Ильич
- * Группа: МК-102
- */
+hexdump_lib.c - реализация библиотеки hexdump.
+ФИО: Филиппов Егор Ильич
+Группа: МК-102
+*/
 #include "hexdump_lib.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <dirent.h>
-#include <string.h>
 
-int dump_dir(const char* dirpath, const DumpOptions* opts) {
-    	struct dirent @id865564845(*entry);
-    	DIR* dp = opendir(dirpath);
-    	if (!dp) return -1;
-    	while ((entry = readdir(dp)) != NULL) {
-        	if (entry->d_type == DT_REG) { // Если это обычный файл
-            		char full_path[1024];
-            		snprintf(full_path, sizeof(full_path), "%s/%s", dirpath, entry->d_name);
-            		printf("File: %s\n", entry->d_name);
-            		dump_file(full_path, opts);
-        	}
-    	}
-    	closedir(dp);
-    	return 0;
+int is_printable(unsigned char c) {
+    return (c >= 32 && c <= 126);
 }
 
-static void print_custom_format(size_t line_idx, size_t current_offset, unsigned char *data, size_t data_len, const DumpOptions *opts) {
-	if (!opts->format_str) {
-        	// Стандартный вывод
-        	printf("%08zX  ", current_offset);
-        	for(size_t i = 0; i < data_len; i += opts->chunk_size) {
-            		printf("%02X ", data[i]);
-        	}
-        	printf("\n");
-        	return;
-    	}
+static void print_chunk_hex(FILE* out, unsigned char* chunk, int size) {
+    for (int i = 0; i < size; i++) {
+        fprintf(out, "%02X", chunk[i]);
+    }
 }
 
-const char *p = opts->format_str;
-    	while (*p) {
-        	if (*p == '\\') {
-            		p++;
-            		switch(*p) {
-                	case 'n': putchar('\n'); break;
-                	case 't': putchar('\t'); break;
-                	default: putchar('\\'); putchar(*p); break;
-            		}
-        	}
-		else if (*p == '%') {
-            		p++;
-            		if (*p == 'i') printf("%zu", line_idx);
-            		else if (*p == 'n') printf("%zu", current_offset);
-            		else {
-                		int chunk_idx = 0;
-                		while (isdigit(*p)) {
-					chunk_idx = chunk_idx * 10 + (*p - '0');
-					p++;
-				}
-                		if ((*p == 'x' || *p == 'X') && (size_t)chunk_idx < data_len) {
-                    			printf("%02X", data[chunk_idx]);
-                		}
-				else if (*p == 'c' && (size_t)chunk_idx < data_len) {
-                    			char c = data[chunk_idx];
-                    			putchar((c >= 32 && c <= 126) ? c : '.');
-                		}
-            		}
-        	} 
-		else {
-            		putchar(*p);
-        		}
-    	}
+static void print_chunk_char(FILE* out, unsigned char* chunk, int size) {
+    for (int i = 0; i < size; i++) {
+        if (is_printable(chunk[i])) {
+            fprintf(out, "%c", chunk[i]);
+        }
+        else {
+            fprintf(out, ".");
+        }
+    }
+}
 
-int dump_file(const char *filepath, const DumpOptions *opts) {
-	FILE *f = fopen(filepath, "rb");
-    	if (!f) return -1;
+static void process_line_format(FILE* out, DumpOptions* opts, long current_offset, int line_idx, unsigned char* line_buffer, int bytes_in_line) {
+    if (!opts->format_str) {
+        fprintf(out, "%08lX ", current_offset);
+        int chunks = (bytes_in_line + opts->chunk_size - 1) / opts->chunk_size;
+        for (int i = 0; i < chunks; i++) {
+            if (i > 0) fprintf(out, " ");
+            int start = i * opts->chunk_size;
+            int len = (start + opts->chunk_size <= bytes_in_line) ? opts->chunk_size : (bytes_in_line - start);
+            print_chunk_hex(out, &line_buffer[start], len);
+        }
+        if (opts->chunk_size == 1) {
+            fprintf(out, " | ");
+            for (int i = 0; i < bytes_in_line; i++) {
+                fprintf(out, "%c", is_printable(line_buffer[i]) ? line_buffer[i] : '.');
+            }
+        }
+        fprintf(out, "\n");
+        return;
+    }
 
-    	if (opts->offset > 0) fseek(f, opts->offset, SEEK_SET);
+    const char* fmt = opts->format_str;
+    while (*fmt) {
+        if (*fmt == '\\') {
+            fmt++;
+            switch (*fmt) {
+            case 'n': fprintf(out, "\n"); break;
+            case 'r': fprintf(out, "\r"); break;
+            case 't': fprintf(out, "\t"); break;
+            case '\\': fprintf(out, "\\"); break;
+            default: fprintf(out, "\\%c", *fmt); break;
+            }
+            fmt++;
+        }
+        else if (*fmt == '%') {
+            fmt++;
+            if (*fmt == 'i') {
+                fprintf(out, "%d", line_idx);
+                fmt++;
+            }
+            else if (*fmt == 'n') {
+                fprintf(out, "%08lX", current_offset);
+                fmt++;
+            }
+            else if (*fmt == 'x' || *fmt == 'c') {
+                int index = 0;
+                if (isdigit((unsigned char)*fmt)) {
+                    index = *fmt - '0';
+                    fmt++;
+                }
+                char type = *fmt;
+                fmt++;
 
-    	size_t buffer_size = opts->chunk_size * opts->chunks_per_line;
-    	unsigned char @id4557802 (*buffer) = malloc(buffer_size);
-    	if (!buffer) { fclose(f); return -1; }
+                int start_pos = index * opts->chunk_size;
+                if (start_pos < bytes_in_line) {
+                    int len = opts->chunk_size;
+                    if (start_pos + len > bytes_in_line) {
+                        len = bytes_in_line - start_pos;
+                    }
+                    if (type == 'x') {
+                        print_chunk_hex(out, &line_buffer[start_pos], len);
+                    }
+                    else if (type == 'c') {
+                        print_chunk_char(out, &line_buffer[start_pos], len);
+                    }
+                }
+            }
+            else {
+                fprintf(out, "%%%c", *fmt);
+                fmt++;
+            }
+        }
+        else {
+            fputc(*fmt, out);
+            fmt++;
+        }
+    }
+}
 
-    	size_t current_offset = opts->offset;
-    	size_t line_idx = 0;
-    	size_t total_read = 0;
+int dump_file(const char* filename, DumpOptions* opts) {
+    if (!filename) return -1;
 
-    	while (1) {
-        	size_t to_read = buffer_size;
-        	if (opts->size > 0 && (opts->size - total_read) < buffer_size) {
-            		to_read = opts->size - total_read;
-        	}
-        	if (to_read == 0) break;
+    FILE* f = fopen(filename, "rb");
+    if (!f) {
+        perror(filename);
+        return -1;
+    }
 
-        	size_t bytes = fread(buffer, 1, to_read, f);
-        	if (bytes == 0) break;
+    if (opts->offset > 0) {
+        fseek(f, opts->offset, SEEK_SET);
+    }
 
-        	print_custom_format(line_idx, current_offset, buffer, bytes, opts);
-        
-        	current_offset += bytes;
-        	total_read += bytes;
-        	line_idx++;
-        	if (bytes < buffer_size) break; // Конец файла
-    	}
+    int line_capacity = opts->chunks_per_line * opts->chunk_size;
+    unsigned char* line_buffer = malloc(line_capacity);
+    if (!line_buffer) {
+        fclose(f);
+        return -1;
+    }
 
-    	free(buffer);
-    	fclose(f);
-    	return 0;
-	
+    long total_read = 0;
+    int line_idx = 0;
+
+    while (1) {
+        memset(line_buffer, 0, line_capacity);
+        int bytes_read_in_line = 0;
+
+        for (int i = 0; i < opts->chunks_per_line; i++) {
+            for (int j = 0; j < opts->chunk_size; j++) {
+                int c = fgetc(f);
+                if (c == EOF) break;
+                if (opts->size > 0 && total_read >= opts->size) break;
+
+                line_buffer[bytes_read_in_line++] = (unsigned char)c;
+                total_read++;
+                if (opts->size > 0 && total_read >= opts->size) break;
+            }
+            if (opts->size > 0 && total_read >= opts->size) break;
+            if (feof(f)) break;
+        }
+
+        if (bytes_read_in_line == 0) break;
+
+        long current_line_offset = opts->offset + (line_idx * opts->chunks_per_line * opts->chunk_size);
+        process_line_format(stdout, opts, current_line_offset, line_idx, line_buffer, bytes_read_in_line);
+
+        line_idx++;
+    }
+
+    free(line_buffer);
+    fclose(f);
+    return 0;
+}
+
+void process_directory(const char* dirname, DumpOptions* opts) {
+    DIR* dir = opendir(dirname);
+    if (!dir) {
+        perror(dirname);
+        return;
+    }
+
+    struct dirent* entry;
+    while ((entry = readdir(dir)) != NULL) {
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) continue;
+
+        char path[1024];
+        snprintf(path, sizeof(path), "%s/%s", dirname, entry->d_name);
+
+        struct stat path_stat;
+        stat(path, &path_stat);
+
+        if (S_ISREG(path_stat.st_mode)) {
+            printf("=== %s ===\n", path);
+            dump_file(path, opts);
+            printf("\n");
+        }
+    }
+    closedir(dir);
 }

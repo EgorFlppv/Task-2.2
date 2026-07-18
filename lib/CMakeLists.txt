@@ -7,8 +7,3 @@ if(BUILD_SHARED_LIBS)
     #set_target_properties(app_lib PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
 endif()
 
-# Тесты библиотеки
-if(BUILD_TESTING)
-    add_subdirectory(tests)
-endif()
-
